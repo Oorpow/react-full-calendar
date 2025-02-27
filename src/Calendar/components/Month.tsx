@@ -1,7 +1,11 @@
 import { Dayjs } from 'dayjs';
+import cs from 'classnames';
 import { CalendarProps } from '../Calendar';
 
-interface MonthCalendarProps extends CalendarProps {}
+interface MonthCalendarProps extends CalendarProps {
+	curMonth: Dayjs;
+	selectHandler?: (date: Dayjs) => void;
+}
 
 interface DaysMatrixData {
 	date?: Dayjs;
@@ -41,39 +45,62 @@ function getAllDays(date: Dayjs) {
 	return daysMatrix;
 }
 
-function renderDays(days: Array<DaysMatrixData>) {
-	// 二维数组6 * 7
-	const rows = [];
-	for (let i = 0; i < 6; i++) {
-		const row = [];
-		for (let j = 0; j < 7; j++) {
-			const item = days[i * 7 + j];
-
-			row[j] = (
-				<div
-					className={
-						'calendar-month-body-cell ' + (item.currentMonth
-							? 'calendar-month-body-cell-current'
-							: '')
-					}
-				>
-					{item.date?.date()}
-				</div>
-			);
-		}
-		rows.push(row);
-	}
-
-	return rows.map((row, idx) => (
-		<div key={idx} className="calendar-month-body-row">
-			{row}
-		</div>
-	));
-}
-
 function Month(props: MonthCalendarProps) {
+	const { dateRender, dateInnerContent, selectHandler, value, curMonth } = props;
+
 	const weekList = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-	const allDays = getAllDays(props.value);
+	const allDays = getAllDays(curMonth);
+
+	function renderDays(days: Array<DaysMatrixData>) {
+		// 二维数组6 * 7
+		const rows = [];
+		for (let i = 0; i < 6; i++) {
+			const row = [];
+			for (let j = 0; j < 7; j++) {
+				const item = days[i * 7 + j];
+
+				row[j] = (
+					<div
+						className={
+							'calendar-month-body-cell ' +
+							(item.currentMonth
+								? 'calendar-month-body-cell-current'
+								: '')
+						}
+						onClick={() => selectHandler?.(item.date!)}
+					>
+						{dateRender ? (
+							dateRender(item.date!)
+						) : (
+							<div className="calendar-month-body-cell-date">
+								<div
+									className={cs(
+										'calendar-month-body-cell-date-value',
+										value?.format('YYYY-MM-DD') ===
+											item.date?.format('YYYY-MM-DD')
+											? 'calendar-month-body-cell-date-selected'
+											: ''
+									)}
+								>
+									{item.date?.date()}
+								</div>
+								<div className="calendar-month-body-cell-date-content">
+									{dateInnerContent?.(item.date!)}
+								</div>
+							</div>
+						)}
+					</div>
+				);
+			}
+			rows.push(row);
+		}
+
+		return rows.map((row, idx) => (
+			<div key={idx} className="calendar-month-body-row">
+				{row}
+			</div>
+		));
+	}
 
 	return (
 		<div className="calendar-month">
